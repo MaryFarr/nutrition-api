@@ -194,8 +194,6 @@ input {
 	margin: 0px;
 }
 #food-list {
-	max-height: 75vh;
-	overflow-y: scroll;
 	margin-bottom: 10px;
 }
 
@@ -210,4 +208,34 @@ input {
 
 .text-shadow {
 	text-shadow: 2px 2px 5px gray;
+}
+.border {
+	border: 1px solid black;
+	padding: 10px;
+}
+
+.food-text {
+	padding-top: 20px;
+	padding-bottom: 20px;
+	margin: 0px;
+}
+
+.food-items {
+	background-color: gray;
+	margin-bottom: 5px;
+	padding: 5px;
+	width: 90%;
+	display: block;
+	margin: auto;
+	margin-bottom: 5px;
+	text-align: center;
+	-webkit-transition: transition 0.3s;
+	transition: 0.3s;
+}
+.food-items:hover {
+
+}
+#selected-foods, #food-list {
+	margin: 0px;
+	padding: 0px;
 }

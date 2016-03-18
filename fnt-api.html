@@ -10,29 +10,7 @@
 		<link rel="icon" type="image/jpg" size="20x20" href="http://www.magnamags.com/upload/articles/shutterstock_133282520121814.jpg"/>
 		<link rel="stylesheet" type="text/css" media="only screen and (max-width: 992px)" href="css/mobile-style.css">
 		<style>
-			.border {
-				border: 1px solid black;
-				padding: 10px;
-			}
-			.food-text {
-				padding-top: 20px;
-				padding-bottom: 20px;
-				margin: 0px;
-			}
-			.food-items {
-				background-color: gray;
-				margin-bottom: 5px;
-				padding: 5px;
-				width: 90%;
-				display: block;
-				margin: auto;
-				margin-bottom: 5px;
-				text-align: center;
-			}
-			#selected-foods, #food-list {
-				margin: 0px;
-				padding: 0px;
-			}
+			
 			#wikipedia-links {
 	margin: 0px;
 	padding: 5px;
@@ -58,6 +36,8 @@
 		</style>
 		<script src="js/jQuery.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+		<script src="https://cdn.firebase.com/js/client/2.2.4/firebase.js"></script>
+		<script src="https://cdn.firebase.com/libs/angularfire/1.1.4/angularfire.min.js"></script>
 	</head>
 	
 	<body ng-app="myApp" ng-controller="masterCtrl" class="blacky">
@@ -96,13 +76,13 @@
 					
 					<div id="selected-foods" class="whitey border">
 						<h2 class="text-center f-bold">Selected Foods</h2>
-						<p class="text-center">Total Calories: <span id="total-cal">{{totalCalories}}</span></p>
+						<p class="text-center"><b>Total Calories:</b> <span id="total-cal">{{totalCalories}}</span></p>
 						<!--<input id="ipt-1" class="middlr" type="text" ng-model="filter.s" placeholder="Filter Selected By Name"/>-->
 						<ul class="selected-foods">
-							<li data-ng-repeat="afood in selectedFoods track by $index " class="food-items" ng-click="addClicked()">
-								<b><p>{{afood.foodName}}</p></b>
-								<p> <span>{{afood.foodBrand}}</span>, <span>{{afood.foodCalories}}</span> Calories.</p>
-								<button type="button" id="remove-btn" ng-click="removeFood(afood)">Remove Item</button>
+							<li data-ng-repeat="food in selectedFoods track by $index " class="food-items" ng-click="addClicked()">
+								<b><p>{{food.foodName}}</p></b>
+								<p> <span>{{food.foodBrand}}</span>, <span>{{food.foodCalories}}</span> Calories.</p>
+								<button type="button" id="remove-btn" ng-click="removeFood(food)">Remove Item</button>
 							</li> 
 						</ul>
 						<br>
@@ -179,11 +159,26 @@
 				console.log("Function Started");
 			}
 			
-			var App = angular.module("myApp", []);
+			var App = angular.module("myApp", ["firebase"]);
+
+			App.factory("foodList", ["$firebaseArray",
+  				function($firebaseArray) {
+
+   					var ref = new Firebase("https://nutrition-trackr.firebaseio.com/");
+
+   					// this uses AngularFire to create the synchronized array
+    				return $firebaseArray(ref);
+ 				}
+			]);
 			
-			App.controller('masterCtrl', function($scope) {
+			App.controller("masterCtrl", ["$scope", "foodList",
+			function($scope, foodList) {
+
+				setTimeout(function(){
+					$scope.calCount();
+				},2500);
 				
-				$scope.selectedFoods = [];
+				$scope.selectedFoods = foodList;
 				
 				$scope.totalCalories = 0;
 				
@@ -197,7 +192,7 @@
 						$('#msg-text2').text('Please Input a Search Query.');
 						setTimeout(function() {
 							$('#msg-text2').text('');
-						},2500);
+						},3000);
 						return;
 					}
 					
@@ -274,47 +269,36 @@
 				}
 				
 				$scope.calCount = function() {
-					$scope.totalCalories = 0;
+
+					console.log($scope.selectedFoods);
+
 					if($scope.selectedFoods.length == 0) {
 						return;
 					}
-					else {
-						$.each($scope.selectedFoods, function(index, item){
-							$scope.totalCalories += item.foodCalories; 	
-						});
-						
-					}
 					
+					$.each($scope.selectedFoods, function(index, food){
+						$scope.totalCalories = $scope.totalCalories + food.foodCalories;	
+					});
+
+					$scope.$apply(function () {
+						console.log($scope.totalCalories);
+					});
 				}
 
 				$scope.addFood = function(food) {
 					console.log(food);
-					$scope.selectedFoods.push(food);
-					
-					/*$('#msg-text2').text('Added To Cart!');
-					setTimeout(function() {
-						$('#msg-text2').text('');
-					},2500);*/
-					
-					$scope.calCount();
-				
+					$scope.selectedFoods.$add(food);
+
+					$scope.totalCalories = $scope.totalCalories + food.foodCalories;
+					//$scope.calCount();
 				}
 				
-				$scope.removeFood = function(afood) {
-					console.log(afood);
-					
-					var index = $scope.selectedFoods.indexOf(afood);
-					//console.log(index);
-
-					$scope.selectedFoods.splice(index, 1);
-					
-					/*$('#msg-text2').text('Removed To Cart!');
-					setTimeout(function() {
-						$('#msg-text2').text('');
-					},2500);*/
-					
-					$scope.calCount();
-				
+				$scope.removeFood = function(food) {
+					console.log(food);
+					var index = $scope.selectedFoods.indexOf(food);
+					$scope.selectedFoods.$remove(index);	
+					$scope.totalCalories = $scope.totalCalories - food.foodCalories;
+					//$scope.calCount();
 				}
 				
 				$scope.webInfo = function() {
@@ -323,7 +307,9 @@
 					);	
 				}
 
-			})
+			 }
+
+			]);
 			
 			function Info() {
 				$('#info-text').text('Search anything edible please');
